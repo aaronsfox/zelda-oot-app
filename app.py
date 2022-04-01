@@ -19,23 +19,23 @@ import plotly.graph_objs as go
 from PIL import Image
 import pandas as pd
 import dash
-from dash import html
 from dash import dcc
+from dash import html
 from dash.dependencies import Input, Output
 
 # %% Set-up
 
 #Import data
-songData = pd.read_csv('data\\songData.csv')
+songData = pd.read_csv('songData.csv')
 
 #Load map image
-mapImg = Image.open('img\\oot_map.jpg')
+mapImg = Image.open('oot_map.jpg')
 
 #Load ocarina image
-ocarinaSmallImg = Image.open('img\\ocarina_small.png')
+ocarinaSmallImg = Image.open('ocarina_small.png')
 
 #Load Link image
-linkImg = Image.open('img\\linkPlaying.png')
+linkImg = Image.open('linkPlaying.png')
 
 #Set song point location size
 songPointSize = 25
@@ -44,7 +44,7 @@ songPointSize = 25
 buttonImageFiles = ['n64_A', 'n64_up', 'n64_left', 'n64_right', 'n64_down']
 buttonImg = {}
 for button in buttonImageFiles:
-    buttonImg[button.split('_')[-1]] = Image.open('img\\'+button+'.png')
+    buttonImg[button.split('_')[-1]] = Image.open(button+'.png')
     
 #Map buttons to plotting values
 buttonPlotVal = {'A': 100, 'down': 200, 'right': 400, 'left': 500, 'up': 700}
@@ -56,7 +56,7 @@ noteList = ['note1', 'note2', 'note3', 'note4', 'note5', 'note6', 'note7', 'note
 notePointSize = 100
 
 #Load treble clef image
-clefImg = Image.open('img\\treble_clef.png')
+clefImg = Image.open('treble_clef.png')
 
 #Set axis ranges for calculations
 musicRangeX = [0.5, 850]
@@ -115,9 +115,9 @@ mapFig.add_layout_image(
     dict(
         source = linkImg,
         xref = 'paper', yref = 'paper',
-        x = 0, y = 0,
+        x = 0, y = 0.5,
         sizex = linkImg_widthProp-0.01, sizey = 1,
-        xanchor = 'left', yanchor = 'bottom',
+        xanchor = 'left', yanchor = 'middle',
         layer = 'above'
     )
 )
@@ -127,9 +127,9 @@ mapFig.add_layout_image(
     dict(
         source = mapImg,
         xref = 'paper', yref = 'paper', 
-        x = linkImg_widthProp, y = 0,
+        x = linkImg_widthProp, y = 0.5,
         sizex = mapImg_widthProp, sizey = 1,
-        xanchor = 'left', yanchor = 'bottom',
+        xanchor = 'left', yanchor = 'middle',
         layer = 'below'       
         )
     )
@@ -164,19 +164,26 @@ mapFig.add_trace(
         )
     )
 
+#Constraint the aspect ratio of the y-axis
+mapFig.update_yaxes(
+    scaleanchor = 'x'
+    )
+
 #Add ocarina images on points
 for songInd in range(len(songData)):
     mapFig.add_layout_image(
         dict(
             source = ocarinaSmallImg,
-            xref = 'paper', yref = 'paper',
-            x = linkImg_widthProp + (1-linkImg_widthProp)*(songData['learntWhere_X'][songInd] / mapImg.size[0]),
-            y = songData['learntWhere_Y'][songInd] / mapImg.size[1],
-            sizex = 0.023, sizey = 0.023,
+            xref = 'x', yref = 'y',
+            x = songData['learntWhere_X'][songInd], y = songData['learntWhere_Y'][songInd],
+            # x = linkImg_widthProp + (1-linkImg_widthProp)*(songData['learntWhere_X'][songInd] / mapImg.size[0]),
+            # y = songData['learntWhere_Y'][songInd] / mapImg.size[1],
+            sizex = 15, sizey = 15,
             xanchor = 'center', yanchor = 'middle',
             layer = 'above'
         )
     )
+
 
 # %% Create app
 
@@ -190,7 +197,9 @@ for songInd in range(len(songData)):
 #### Need to calculate or create size relative to axes coordinates
 
 #Create the app
-app = dash.Dash()
+app = dash.Dash(__name__)
+server = app.server
+app.title = 'Legend of Zelda Ocarina of Time Songs'
 
 #Create app layout
 app.layout = html.Div([
